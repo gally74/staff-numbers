@@ -136,7 +136,6 @@ function refreshActiveRecordUI() {
   const signingSection = document.getElementById("signingSection");
   const counter = document.getElementById("signCounter");
   const tbody = document.getElementById("signatureTableBody");
-  const exportBtn = document.getElementById("exportPdfBtn");
 
   const record = activeRecordId ? records[activeRecordId] : null;
 
@@ -147,7 +146,6 @@ function refreshActiveRecordUI() {
     info.textContent =
       "No active record yet. Enter a document/PPE name above to start.";
     signingSection.style.display = "none";
-    exportBtn.disabled = true;
     return;
   }
 
@@ -195,8 +193,6 @@ function refreshActiveRecordUI() {
   const totalDrivers = BASE_DRIVERS.length;
   const signedCount = record.signatures ? record.signatures.length : 0;
   counter.textContent = `${signedCount} of ${totalDrivers} drivers recorded for this document.`;
-
-  exportBtn.disabled = signedCount === 0;
 }
 
 // Create or load a record from inputs
@@ -338,7 +334,7 @@ function handleDeleteRecord() {
   const record = records[activeRecordId];
 
   const ok = window.confirm(
-    `Delete record "${record.name}" on ${record.date}?\n\nThis will remove all signatures for this document on this date from this device.`
+    `Delete record "${record.name}" on ${record.date}?\n\nThis will remove all signatures for this document on this date from this iPhone.`
   );
   if (!ok) return;
 
@@ -350,63 +346,6 @@ function handleDeleteRecord() {
   refreshActiveRecordUI();
 
   setRecordMessage("Record deleted. You can create a new one above.", "success");
-}
-
-// Export current record to PDF
-function handleExportPdf() {
-  if (!activeRecordId || !records[activeRecordId]) return;
-
-  const record = records[activeRecordId];
-  if (!record.signatures || record.signatures.length === 0) {
-    setSignMessage("No signatures to export.", "error");
-    return;
-  }
-
-  if (!window.jspdf || !window.jspdf.jsPDF) {
-    setSignMessage("PDF library not loaded. Please check your connection.", "error");
-    return;
-  }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-
-  doc.setFontSize(14);
-  doc.text("Safety / PPE Receipt Record", 10, 12);
-  doc.setFontSize(11);
-  doc.text(`Document/PPE: ${record.name}`, 10, 20);
-  doc.text(`Date: ${record.date}`, 10, 26);
-
-  doc.setFontSize(10);
-  let y = 38;
-
-  doc.text("Driver", 10, y);
-  doc.text("Staff no.", 80, y);
-  doc.text("Time recorded", 120, y);
-  y += 6;
-
-  const sortedSigs = [...record.signatures].sort((a, b) =>
-    a.name.localeCompare(b.name, "en", { sensitivity: "base" })
-  );
-
-  sortedSigs.forEach((sig) => {
-    if (y > 280) {
-      doc.addPage();
-      y = 20;
-    }
-
-    const timeStr = formatUkDateTime(sig.timestamp);
-
-    doc.text(sig.name, 10, y);
-    doc.text(sig.staffNumber, 80, y);
-    doc.text(timeStr, 120, y);
-
-    y += 6;
-  });
-
-  const safeName = record.name.replace(/[^\w\-]+/g, "-");
-  const filename = `safety-${record.date}-${safeName}.pdf`;
-
-  doc.save(filename);
 }
 
 // Init
@@ -435,10 +374,6 @@ document.addEventListener("DOMContentLoaded", () => {
   document
     .getElementById("markReceivedBtn")
     .addEventListener("click", handleMarkReceived);
-
-  document
-    .getElementById("exportPdfBtn")
-    .addEventListener("click", handleExportPdf);
 
   const deleteBtn = document.getElementById("deleteRecordBtn");
   if (deleteBtn) {
