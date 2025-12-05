@@ -20,7 +20,7 @@ function saveRecords(records) {
   }
 }
 
-// Record ID: docName + "|" + date
+// Record ID: date + "|" + doc name
 function makeRecordId(name, date) {
   return `${date}|${name}`;
 }
@@ -28,7 +28,25 @@ function makeRecordId(name, date) {
 let records = loadRecords();
 let activeRecordId = null;
 
-// UI helpers
+// ---------- Formatting helpers ----------
+
+// UK-style datetime: dd/mm/yyyy, HH:MM:SS (24h)
+function formatUkDateTime(isoString) {
+  const dt = new Date(isoString);
+  if (isNaN(dt.getTime())) return isoString;
+
+  const dd = String(dt.getDate()).padStart(2, "0");
+  const mm = String(dt.getMonth() + 1).padStart(2, "0");
+  const yyyy = dt.getFullYear();
+  const hh = String(dt.getHours()).padStart(2, "0");
+  const min = String(dt.getMinutes()).padStart(2, "0");
+  const ss = String(dt.getSeconds()).padStart(2, "0");
+
+  return `${dd}/${mm}/${yyyy}, ${hh}:${min}:${ss}`;
+}
+
+// ---------- UI helpers ----------
+
 function setRecordMessage(text, type) {
   const el = document.getElementById("recordMessage");
   el.textContent = text || "";
@@ -47,28 +65,38 @@ function setSignMessage(text, type) {
   if (type === "success") el.classList.add("success");
 }
 
+function findDriverByStaffNumber(staffNumber) {
+  return BASE_DRIVERS.find((d) => d.staffNumber === staffNumber);
+}
+
 // Populate driver dropdown from BASE_DRIVERS (from drivers.js)
-function populateDriversSelect() {
+// Hides any drivers who have already signed for the ACTIVE record.
+function populateDriversSelect(record) {
   const select = document.getElementById("driverPicker");
 
+  // Keep the placeholder, remove others
   while (select.options.length > 1) {
     select.remove(1);
   }
+
+  const signedStaffNumbers = record && record.signatures
+    ? record.signatures.map((s) => s.staffNumber)
+    : [];
 
   const sorted = [...BASE_DRIVERS].sort((a, b) =>
     a.name.localeCompare(b.name, "en", { sensitivity: "base" })
   );
 
   sorted.forEach((d) => {
+    if (signedStaffNumbers.includes(d.staffNumber)) return; // already signed for this record
     const opt = document.createElement("option");
     opt.value = d.staffNumber; // unique
     opt.textContent = d.name;
     select.appendChild(opt);
   });
-}
 
-function findDriverByStaffNumber(staffNumber) {
-  return BASE_DRIVERS.find((d) => d.staffNumber === staffNumber);
+  // Reset selection after refresh
+  select.value = "";
 }
 
 // Fill existing records dropdown
@@ -112,6 +140,9 @@ function refreshActiveRecordUI() {
 
   const record = activeRecordId ? records[activeRecordId] : null;
 
+  // Update driver picker based on record (hide already-signed drivers)
+  populateDriversSelect(record || null);
+
   if (!record) {
     info.textContent =
       "No active record yet. Enter a document/PPE name above to start.";
@@ -151,10 +182,7 @@ function refreshActiveRecordUI() {
       tdStaff.textContent = sig.staffNumber;
 
       const tdTime = document.createElement("td");
-      const dt = new Date(sig.timestamp);
-      tdTime.textContent = isNaN(dt.getTime())
-        ? sig.timestamp
-        : dt.toLocaleString();
+      tdTime.textContent = formatUkDateTime(sig.timestamp);
 
       tr.appendChild(tdName);
       tr.appendChild(tdStaff);
@@ -294,7 +322,34 @@ function handleMarkReceived() {
   }
 
   saveRecords(records);
+  refreshActiveRecordUI(); // also refreshes picker and hides that driver
+}
+
+// Delete the current record completely
+function handleDeleteRecord() {
+  setRecordMessage("");
+  setSignMessage("");
+
+  if (!activeRecordId || !records[activeRecordId]) {
+    setRecordMessage("No active record to delete.", "error");
+    return;
+  }
+
+  const record = records[activeRecordId];
+
+  const ok = window.confirm(
+    `Delete record "${record.name}" on ${record.date}?\n\nThis will remove all signatures for this document on this date from this device.`
+  );
+  if (!ok) return;
+
+  delete records[activeRecordId];
+  saveRecords(records);
+  activeRecordId = null;
+
+  refreshRecordsSelect();
   refreshActiveRecordUI();
+
+  setRecordMessage("Record deleted. You can create a new one above.", "success");
 }
 
 // Export current record to PDF
@@ -339,10 +394,7 @@ function handleExportPdf() {
       y = 20;
     }
 
-    const dt = new Date(sig.timestamp);
-    const timeStr = isNaN(dt.getTime())
-      ? sig.timestamp
-      : dt.toLocaleString();
+    const timeStr = formatUkDateTime(sig.timestamp);
 
     doc.text(sig.name, 10, y);
     doc.text(sig.staffNumber, 80, y);
@@ -369,9 +421,8 @@ document.addEventListener("DOMContentLoaded", () => {
     dateInput.value = `${yyyy}-${mm}-${dd}`;
   }
 
-  populateDriversSelect();
   refreshRecordsSelect();
-  refreshActiveRecordUI();
+  refreshActiveRecordUI(); // also populates driver picker
 
   document
     .getElementById("loadRecordBtn")
@@ -388,4 +439,9 @@ document.addEventListener("DOMContentLoaded", () => {
   document
     .getElementById("exportPdfBtn")
     .addEventListener("click", handleExportPdf);
+
+  const deleteBtn = document.getElementById("deleteRecordBtn");
+  if (deleteBtn) {
+    deleteBtn.addEventListener("click", handleDeleteRecord);
+  }
 });
