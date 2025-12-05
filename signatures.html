@@ -165,27 +165,6 @@
       font-size: 0.9rem;
     }
 
-    .pill-row {
-      display: flex;
-      gap: 0.75rem;
-      flex-wrap: wrap;
-      margin-top: 0.5rem;
-    }
-
-    .pill {
-      padding: 0.25rem 0.7rem;
-      border-radius: 50px;
-      border: 1px solid #ddd;
-      font-size: 0.8rem;
-      cursor: pointer;
-      background: #fafafa;
-    }
-
-    .pill.active {
-      border-color: #007aff;
-      background: #e9f1ff;
-    }
-
     @media (max-width: 600px) {
       .row {
         flex-direction: column;
@@ -288,6 +267,20 @@
           <p class="muted">
             Use this when everyone has signed. The PDF will download so you can email it
             as proof of receipt.
+          </p>
+        </div>
+
+        <div class="field" style="text-align:right;">
+          <button
+            id="deleteRecordBtn"
+            type="button"
+            class="secondary"
+            style="background:#fee; border:1px solid #f9a3a3; color:#b00020;"
+          >
+            Delete this record
+          </button>
+          <p class="muted">
+            Deletes this document/PPE round (all signatures) from this device so you can start over.
           </p>
         </div>
       </div>
