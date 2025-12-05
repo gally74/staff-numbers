@@ -222,7 +222,7 @@
     <div id="signingSection" style="display:none;">
       <div class="section-title">
         2. Mark drivers as received &amp; signed
-        <span class="badge">Live on this device</span>
+        <span class="badge">Stored on this iPhone</span>
       </div>
 
       <div id="signMessage" class="message"></div>
@@ -259,17 +259,12 @@
         </table>
       </div>
 
-      <div class="row" style="margin-top: 1rem;">
-        <div class="field">
-          <button id="exportPdfBtn" type="button" class="secondary">
-            Export list to PDF
-          </button>
-          <p class="muted">
-            Use this when everyone has signed. The PDF will download so you can email it
-            as proof of receipt.
-          </p>
-        </div>
+      <p class="muted" style="margin-top:0.6rem;">
+        Tip: when a round is complete, you can take a screenshot for your records,
+        then delete the round below if you want to start over.
+      </p>
 
+      <div class="row" style="margin-top: 0.8rem;">
         <div class="field" style="text-align:right;">
           <button
             id="deleteRecordBtn"
@@ -280,7 +275,7 @@
             Delete this record
           </button>
           <p class="muted">
-            Deletes this document/PPE round (all signatures) from this device so you can start over.
+            Deletes this document/PPE round (all signatures) from this iPhone so you can start over.
           </p>
         </div>
       </div>
@@ -289,10 +284,6 @@
 
   <!-- Shared driver data -->
   <script src="drivers.js"></script>
-  <!-- jsPDF for PDF export -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
-          integrity="sha512-/F2H9usglY1dDt0Lp4OyTJyZkF5zG9wl1hEJv1shknxFG+Ztodhf4FwXhKoIhH94nDiS9Kn3rGnpIhxC3kv3uQ=="
-          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <!-- App logic -->
   <script src="signatures.js"></script>
 </body>
